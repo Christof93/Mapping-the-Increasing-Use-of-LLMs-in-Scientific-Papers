@@ -1,9 +1,11 @@
 import spacy
 import re
+import math
 
 import pandas as pd
 
 nlp = spacy.load("en_core_web_lg")
+SEED = 42
 
 def tokenize(text):
     """
@@ -38,8 +40,23 @@ def tokenize(text):
 
 def tokenize_df(series):
     all_sentences = [tokenize(text) for text in series]
-def create_data_split():
-    pass
+
+def create_data_split(data, val_ratio, text_sources=["Abstract", "Introduction", "Related Work", "Methods", "Result&Discussion", "Conclusion"], include_pos="all"):
+    train_texts = []
+    val_texts = []
+    data["is_val"] = False
+    data.loc[data.sample(math.floor(data.length * val_ratio), random_state=SEED).index, "is_val"] = True
+    for row in data.iterrows():
+        paper_texts = []
+        for source in text_sources:
+            paper_texts+=tokenize(row[source])
+        if row["is_val"]:
+            val_texts+=paper_texts
+        else:
+            train_texts+=paper_texts
+    return train_texts, val_texts
+
+                
 
 def create_splits():
     pass
@@ -62,4 +79,4 @@ def dataset_gpt_inference(df):
 
 if __name__=="__main__":
     retraction_df, reference_df = get_source_data()
-    retraction_gpr_inferenece_dataset = dataset_gpt_inference(retraction_df)
+    retraction_gpr_inference_dataset = dataset_gpt_inference(retraction_df)
